@@ -92,6 +92,27 @@ async function run() {
             }
         });
 
+        app.delete('/courses/:id', async(req,res)=>{
+            const {id} = req.params
+            const objectId = new ObjectId(id)
+            const filter = {_id: objectId}
+
+            const result = await courses.deleteOne(filter)
+
+            res.send({
+                success: true,
+                result
+            })
+        })
+
+        app.get('/latest-courses', async(req,res)=>{
+            const result = await courses.find().sort({date: 'desc'})
+            .limit(6).toArray()
+
+            console.log(result)
+            res.send(result)
+        })
+
 
     } catch (err) {
         console.error("Error connecting to MongoDB:", err);
