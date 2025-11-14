@@ -1,5 +1,5 @@
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express');
 const cors = require('cors');
 const app = express();
@@ -45,6 +45,17 @@ async function run() {
             const result = await courses.find(newCourses).toArray();
             res.send(result);
         })
+        app.get('/courses/:id', async(req,res)=>{
+            const {id} = req.params
+            console.log(id)
+
+            const result = await courses.findOne({_id: new ObjectId(id)})
+            res.send({
+                success: true,
+                result
+            })
+        })
+
         app.post('/courses' , async(req, res)=>{
             const newCourse = req.body;
             const result = courses.insertOne(newCourse);
