@@ -25,7 +25,7 @@ async function run() {
     try {
 
         await client.connect().then(async () => {
-    
+
 
             app.get('/', (req, res) => {
                 res.send('running')
@@ -38,34 +38,64 @@ async function run() {
 
         const db = client.db('EduHub');
         const courses = await db.collection('courses');
-        
+
         app.get('/courses', async (req, res) => {
+            const email = req.query.email;
+            const query = {};
+            if (email) {
+                query.email = email;
+            }
 
             const newCourses = req.body;
-            const result = await courses.find(newCourses).toArray();
+            const result = await courses.find(query).toArray();
             res.send(result);
         })
-        app.get('/courses/:id', async(req,res)=>{
-            const {id} = req.params
-            console.log(id)
+        app.get('/courses/:id', async (req, res) => {
+            const { id } = req.params
 
-            const result = await courses.findOne({_id: new ObjectId(id)})
+
+            const result = await courses.findOne({ _id: new ObjectId(id) })
             res.send({
                 success: true,
                 result
             })
         })
 
-        app.post('/courses' , async(req, res)=>{
+
+        app.post('/courses', async (req, res) => {
             const newCourse = req.body;
             const result = courses.insertOne(newCourse);
             res.send(result);
         })
 
+        //update method
+        app.put('/courses/:id', async (req, res) => {
+            try {
+                const { id } = req.params;
+                const data = req.body;
+
+                const objectId = new ObjectId(id);
+
+                const result = await courses.updateOne(
+                    { _id: objectId },     
+                    { $set: data }          
+                );
+
+                res.send({
+                    success: true,
+                    result
+                });
+
+            } catch (error) {
+                console.log(error);
+                res.status(500).send({ success: false, error });
+            }
+        });
+
 
     } catch (err) {
-    console.error("Error connecting to MongoDB:", err);
-  }
+        console.error("Error connecting to MongoDB:", err);
+    }
 }
 run().catch(console.dir);
 
