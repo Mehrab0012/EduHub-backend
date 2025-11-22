@@ -11,6 +11,17 @@ app.use(cors());
 app.use(express.json())
 
 
+//firebase Admin
+
+const admin = require("firebase-admin");
+
+const serviceAccount = require("./serviceKey.json");
+
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
+
+
 const uri = "mongodb+srv://EduHub:3srD59nJyZPIMUcA@cluster0.pvnuook.mongodb.net/?appName=Cluster0";
 
 const client = new MongoClient(uri, {
@@ -20,6 +31,24 @@ const client = new MongoClient(uri, {
         deprecationErrors: true,
     }
 });
+
+//middleware
+const middleware = async (req, res, next) => {
+    const authorization = req.headers.authorization;
+    const token = authorization.split(' ')[1]
+
+    try {
+        await admin.auth().verifyIdToken(token);
+        next();
+    }
+    catch(error){
+        res.status(401).send({
+            message: "Unauthorized access."
+        })
+    }
+        
+
+}
 
 async function run() {
     try {
@@ -38,6 +67,17 @@ async function run() {
 
         const db = client.db('EduHub');
         const courses = await db.collection('courses');
+        const enrolledCollection = await db.collection('enrolled');
+
+        app.get('/enrolled', async (req, res) => {
+            const email = req.query.email;
+            const query = {};
+            if (email) {
+                query.email = email;
+            }
+            const result = await courses.find(query).toArray();
+            res.send(result)
+        })
 
         app.get('/courses', async (req, res) => {
             const email = req.query.email;
@@ -45,12 +85,10 @@ async function run() {
             if (email) {
                 query.email = email;
             }
-
-            const newCourses = req.body;
             const result = await courses.find(query).toArray();
             res.send(result);
         })
-        app.get('/courses/:id', async (req, res) => {
+        app.get('/courses/:id', middleware, async (req, res) => {
             const { id } = req.params
 
 
@@ -77,8 +115,8 @@ async function run() {
                 const objectId = new ObjectId(id);
 
                 const result = await courses.updateOne(
-                    { _id: objectId },     
-                    { $set: data }          
+                    { _id: objectId },
+                    { $set: data }
                 );
 
                 res.send({
@@ -92,10 +130,10 @@ async function run() {
             }
         });
 
-        app.delete('/courses/:id', async(req,res)=>{
-            const {id} = req.params
+        app.delete('/courses/:id', async (req, res) => {
+            const { id } = req.params
             const objectId = new ObjectId(id)
-            const filter = {_id: objectId}
+            const filter = { _id: objectId }
 
             const result = await courses.deleteOne(filter)
 
@@ -105,11 +143,10 @@ async function run() {
             })
         })
 
-        app.get('/latest-courses', async(req,res)=>{
-            const result = await courses.find().sort({date: 'desc'})
-            .limit(6).toArray()
+        app.get('/latest-courses', async (req, res) => {
+            const result = await courses.find().sort({ date: 'desc' })
+                .limit(6).toArray()
 
-            console.log(result)
             res.send(result)
         })
 
