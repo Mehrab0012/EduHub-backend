@@ -35,8 +35,14 @@ const client = new MongoClient(uri, {
 //middleware
 const middleware = async (req, res, next) => {
     const authorization = req.headers.authorization;
-    const token = authorization.split(' ')[1]
 
+
+    if(!authorization){
+        return res.status(401).send({
+            message: "Unauthorized access."
+        })
+    }
+    const token = authorization.split(' ')[1]
     try {
         await admin.auth().verifyIdToken(token);
         next();
@@ -75,7 +81,7 @@ async function run() {
             if (email) {
                 query.email = email;
             }
-            const result = await courses.find(query).toArray();
+            const result = await enrolledCollection.find(query).toArray();
             res.send(result)
         })
 
@@ -149,6 +155,14 @@ async function run() {
 
             res.send(result)
         })
+
+        // enrolled course system
+        app.post('/enrolled', async(req, res)=>{
+            const data = req.body;
+            const result = await enrolledCollection.insertOne(data)
+            res.send(result);
+        })
+
 
 
     } catch (err) {
