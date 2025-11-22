@@ -4,7 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3000;
-
+require("dotenv").config()
 //middleware
 
 app.use(cors());
@@ -22,7 +22,7 @@ admin.initializeApp({
 });
 
 
-const uri = "mongodb+srv://EduHub:3srD59nJyZPIMUcA@cluster0.pvnuook.mongodb.net/?appName=Cluster0";
+const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}.pvnuook.mongodb.net/?appName=Cluster0`;
 
 const client = new MongoClient(uri, {
     serverApi: {
@@ -37,7 +37,7 @@ const middleware = async (req, res, next) => {
     const authorization = req.headers.authorization;
 
 
-    if(!authorization){
+    if (!authorization) {
         return res.status(401).send({
             message: "Unauthorized access."
         })
@@ -47,12 +47,12 @@ const middleware = async (req, res, next) => {
         await admin.auth().verifyIdToken(token);
         next();
     }
-    catch(error){
+    catch (error) {
         res.status(401).send({
             message: "Unauthorized access."
         })
     }
-        
+
 
 }
 
@@ -157,11 +157,17 @@ async function run() {
         })
 
         // enrolled course system
-        app.post('/enrolled', async(req, res)=>{
+        app.post('/enrolled', async (req, res) => {
             const data = req.body;
             const result = await enrolledCollection.insertOne(data)
             res.send(result);
         })
+        // search
+        app.get("/search", async (req, res) => {
+            const search = req.query.search;
+            const result = await courses.find({ title: { $regex: search, $options: "i" } }).toArray();
+            res.send(result);
+        });
 
 
 
