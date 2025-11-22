@@ -59,9 +59,6 @@ const middleware = async (req, res, next) => {
 async function run() {
     try {
 
-        await client.connect().then(async () => {
-
-
             app.get('/', (req, res) => {
                 res.send('running')
             })
@@ -69,7 +66,7 @@ async function run() {
             app.listen(port, () => {
                 console.log(`Server is running on http://localhost:${port}`);
             })
-        })
+      
 
         const db = client.db('EduHub');
         const courses = await db.collection('courses');
